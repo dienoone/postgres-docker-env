@@ -1,3 +1,8 @@
+# Related Records with Joins
+
+- adding some data
+
+```sql
 CREATE TABLE users(
   id SERIAL PRIMARY KEY,
   username VARCHAR(50)
@@ -149,20 +154,66 @@ VALUES
   ('Occaecati eos possimus deleniti itaque aliquam accusamus.', 3, 4),
   ('Molestiae officia architecto eius nesciunt.', 5, 4),
   ('Minima dolorem reiciendis excepturi culpa sapiente eos deserunt ut.', 3, 3);
+```
 
-SELECT * FROM users;
-SELECT * FROM photos;
-SELECT * FROM comments;
+The more tables we have, the more interesting quesutions we can answer like:
 
+- Find all the comments for the photo with `ID = 3`, along with the username of the comment author.
+- Find the photo with `ID = 10` and get the `number of comments` attacted to it.
+- Find the `average number of comments` per photo.
+- Find the user with `the most activity` (most comments + most photos)
+- Find the photo with `most comments` attacted to it.
+- Calculate the `average number of characters` per comment.
 
+To do so, we will use `Joins` and `Aggregation`:
+
+- Joins:
+  - Produces values by merging together rows from different related tables.
+  - Use a join most times that you're asked to find data that involves multiple resources.
+- Aggregation:
+  - Looks at many rows and calculates a single value.
+  - Works like `most`, `average`, `least` are a sign that you need to use an aggregation.
+
+## Joining Data from Different Tables
+
+1. For each comment, show the contents of the comment and the username of the user who wrote the comment
+
+```sql
 SELECT contents, username
 FROM comments
 JOIN users ON users.id = comments.user_id;
+```
 
-SELECT p.id, c.id comment_id
+- The order of execution is: `FROM`, `JOIN`, `SELECT`
+
+2. For each comment, list the contents of the comment and the URL of the photo the comment was added to.
+
+```sql
+SELECT contents, url
+FROM comments
+JOIN photos ON photos.id = comments.photo_id;
+```
+
+## Alternate Forms of Syntax
+
+- Notes on Joins:
+  - Table order between `FROM` and `JOIN` frequently makes a difference.
+  - We must give context if column names collide.
+  - Tables can be renamed using the `AS` keyword
+  - There are a few kinds on joins!
+
+```sql
+SELECT p.id, c.id
 FROM photos AS p
 JOIN comments As c ON p.id = c.photo_id;
+```
 
+## Missing Data in Joins
+
+Show each photo url and the username of the poster
+
+```sql
+-- NOTE: the order doesn't matter here...
 SELECT url, username
 FROM photos
 JOIN users ON users.id = photos.user_id;
@@ -170,13 +221,47 @@ JOIN users ON users.id = photos.user_id;
 SELECT url, username
 FROM users
 JOIN photos ON photos.user_id = users.id;
+```
 
+Now, what we want to do here is that, show each photo listed in the database, even if the photo doesn't have a user_id, for our database right now, all photos already has a user_id, now let's try something interesting, let's add a photo doesn't have a user_id (put user_id to `NULL`):
+
+```sql
 INSERT INTO photos (url, user_id)
 VALUES ('https://banner.jpg', NULL);
+```
 
+Now, Let's try our query again:
+
+```sql
+SELECT url, username
+FROM photos
+JOIN users ON users.id = photos.user_id;
+```
+
+You will notice that the image doesn't exist the query result, and if we want to make sure that is the photo exist, we can do that:
+
+```sql
 SELECT * FROM photos;
-SELECT * FROM users;
+```
 
+Why this happens??
+
+## Why Wasn't It Included
+
+The problem is that, the type of the join we currently use, is if there are any row from the photos table doesn't match a row from the users table, drop that raw from the result set. This is why the photo with user_id is equal to NULL doesn't show in the result set.
+
+What if we want to include this photo in the result set, in this case we should use another kind of Join.
+
+## Four Kinds of Joins
+
+1. Inner Join
+2. Outer Join: LEFT Outer Join and RIGHT Outer Join
+3. Full Join
+4. Cross Join
+
+## Each Join in Practice
+
+```sql
 INSERT INTO users(username)
 VALUES ('Nicole');
 
@@ -192,26 +277,66 @@ SELECT url, username
 FROM photos
 FULL JOIN users ON users.id = photos.user_id;
 
-
 SELECT url, username
 FROM photos
 CROSS JOIN users;
+```
 
+## Does Order Matter?
+
+```sql
+SELECT url, username
+FROM photos
+LEFT JOIN users ON users.id = photos.user_id;
+
+SELECT url, username
+FROM users
+LEFT JOIN photos ON photos.user_id = users.id;
+```
+
+## Exercise
+
+- write a query that will return the `title` of each book, along with the `name` of the author. All authors should be included, even if they do not have a book associated with them.
+
+```sql
 SELECT title, name
 FROM books
 RIGHT JOIN authors ON authors.id = books.author_id;
 
 SELECT title, name
-FROM authors 
+FROM authors
 LEFT JOIN books ON books.author_id = authors.id;
+```
 
+## Where with Join
+
+- Users can comment on photos that they posted. List the url and contents for every photo/comment where this occured.
+
+```sql
 SELECT url, contents
 FROM comments
 JOIN photos ON photos.id = comments.photo_id
 WHERE comments.user_id = photos.user_id;
+```
 
+## Three Way Joins
 
+```sql
 SELECT url, contents, username
 FROM comments
 JOIN photos ON photos.id = comments.photo_id
 JOIN users ON users.id = comments.user_id AND users.id = photos.user_id
+```
+
+## A Bit of Practice
+
+Hmmm...I wonder if any authors are writing their own reviews for books! You are working with a database of `books`, `authors`, and `reviews`
+
+Write a query that will return the `title` of each book, along with the `name` of the author, and the `rating` of a review. Only show rows where the author of the book is also the author of the review.
+
+```sql
+SELECT title, name, rating
+FROM books
+JOIN reviews ON reviews.book_id = books.id
+JOIN authors ON authors.id = books.author_id AND auhors.id = reviews.reviewer_id
+```
