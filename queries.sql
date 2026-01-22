@@ -1,13 +1,15 @@
-SELECT * FROM users;
-SELECT * FROM products;
-SELECT * FROM orders;
+SELECT *
+FROM products
+ORDER BY price, weight DESC;
 
--- Some GROUP BY Practice
+SELECT COUNT(*)
+FROM users;
 
-SELECT paid, COUNT(*)
-FROM orders
-GROUP BY paid
-
-SELECT first_name, last_name, paid
+SELECT *
 FROM users
-JOIN orders ON orders.user_id = users.id
+OFFSET 40;
+
+SELECT *
+FROM products
+ORDER BY price 
+LIMIT 5;
